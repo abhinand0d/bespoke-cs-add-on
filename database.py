@@ -42,20 +42,19 @@ class Bespoke():
                         nqty = xi[2]
                         piprice = nprice/nqty 
                     
-                        ITEM_CODE, ITEM_NAME, ITEM_PURCHASE_RATE, ITEM_SALE_RATE = Bespoke.item(code=citcode)
+                        ITEM_CODE, ITEM_NAME, _, ITEM_SALE_RATE = Bespoke.item(code=citcode)
 
-                        if piprice != ITEM_SALE_RATE:
-                            print("Price Different from sale rate")
+                        if piprice != ITEM_SALE_RATE: # this will update user if the rate is different 
                             ITEM_PURCHASE_RATE = int(piprice) * 0.7
                             ITEM_SALE_RATE = piprice
-                        if ITEM_PURCHASE_RATE == 0:
-                            ITEM_PURCHASE_RATE = ITEM_SALE_RATE * 0.7
+                        
+                        ITEM_PURCHASE_RATE = round(ITEM_SALE_RATE * 0.7,2)
+
                         purchase_rate += ITEM_PURCHASE_RATE * nqty
                         PROFIT = (int(ITEM_SALE_RATE) - int(ITEM_PURCHASE_RATE)) * nqty
                         profit_rate += PROFIT
 
                         ddp.append([citcode,ITEM_NAME,nprice,nqty,ITEM_SALE_RATE,ITEM_PURCHASE_RATE,PROFIT])
-                        print(ddp)
 
                     sale[iu]["item_list"] = ddp
                     sale[iu]["purchase_rate"] = purchase_rate
@@ -85,10 +84,3 @@ class Bespoke():
             ITEM_LIST.append(i[0])
 
         return ITEM_LIST
-
-
-# Bespoke.sale(date="15")
-# cp = Bespoke.item(code="P2393")
-cp = Bespoke.sale(date="2023-8-4")
-print(cp)
-
