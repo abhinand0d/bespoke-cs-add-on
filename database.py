@@ -1,10 +1,34 @@
 import pyodbc
 import json
 import os
+import openpyxl
 
 DBQ = 'D:\BESPOKE TSR\MData.mdb' #DB Location - Change it later
 conn = pyodbc.connect(r'Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ='+DBQ+';')
 LOCATION = os.getenv("LOCATION")
+
+
+def EXCEL_DATA():
+    with open("config.json","r") as f:
+        data = json.load(f)
+        EXCEL = data["EXCEL"]
+
+    if not os.path.exists(f"{EXCEL}data.xlsx"):
+        # Create new excel file
+        openpyxl.Workbook().save(f"{EXCEL}data.xlsx")
+
+    try:
+        MONTHLY_EXP = openpyxl.load_workbook(f"{EXCEL}data.xlsx")
+        data_to_json = {}
+        MONTHLY_EXP_SHEET = MONTHLY_EXP.active
+        for i in range(1,MONTHLY_EXP_SHEET.max_row+1):
+            # check if second value is numeric
+            if isinstance(MONTHLY_EXP_SHEET.cell(i,2).value,int) or isinstance(MONTHLY_EXP_SHEET.cell(i,2).value,float):
+                data_to_json[MONTHLY_EXP_SHEET.cell(i,1).value] = MONTHLY_EXP_SHEET.cell(i,2).value
+
+        return data_to_json
+    except:
+        return None
 
 class Bespoke():
 
