@@ -1,0 +1,9 @@
+{
+    "Location":"Location Name",
+    "FixedCost":{
+        "Rent":20000,
+        "Electricity":2600,
+        "Internet":530
+    },
+    "Pythonanywhereurl":"https://appname.pythonanywhere.com"
+}

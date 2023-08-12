@@ -1,39 +1,26 @@
 import pyodbc
 import json
 import os
-import openpyxl
+import requests as rq
 
 DBQ = 'D:\BESPOKE TSR\MData.mdb' #DB Location - Change it later
 conn = pyodbc.connect(r'Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ='+DBQ+';')
-LOCATION = os.getenv("LOCATION")
 
+with open("data/necessary_data.json","r") as f:
+    data = json.load(f)
+    LOCATION = data["Location"]
+    # Extract Monthly Expense
+    RENT = data["FixedCost"]["Rent"]
+    ELECTRICITY = data["FixedCost"]["Electricity"]
+    INTERNET = data["FixedCost"]["Internet"]
 
-def EXCEL_DATA():
-    with open("config.json","r") as f:
-        data = json.load(f)
-        EXCEL = data["EXCEL"]
-
-    if not os.path.exists(f"{EXCEL}data.xlsx"):
-        # Create new excel file
-        openpyxl.Workbook().save(f"{EXCEL}data.xlsx")
-
-    try:
-        MONTHLY_EXP = openpyxl.load_workbook(f"{EXCEL}data.xlsx")
-        data_to_json = {}
-        MONTHLY_EXP_SHEET = MONTHLY_EXP.active
-        for i in range(1,MONTHLY_EXP_SHEET.max_row+1):
-            # check if second value is numeric
-            if isinstance(MONTHLY_EXP_SHEET.cell(i,2).value,int) or isinstance(MONTHLY_EXP_SHEET.cell(i,2).value,float):
-                data_to_json[MONTHLY_EXP_SHEET.cell(i,1).value] = MONTHLY_EXP_SHEET.cell(i,2).value
-
-        return data_to_json
-    except:
-        return None
+    TOTAL_FIXED_COST = round(((int(RENT) + int(ELECTRICITY) + int(INTERNET))/30),2)
 
 class Bespoke():
 
     def sale(date):
-        sale = {"total_amt": 0,"Location":LOCATION}
+        # Remember this will be need to be reflected in the server too
+        sale = {"total_amt": 0,"Location":LOCATION,"FixedExp":TOTAL_FIXED_COST}
         total_amt = 0
         cur = conn.cursor()
         cur.execute(f"SELECT nsaleno,nsaleamt,ntotdiscamt FROM salesmast WHERE dsaledate=#{date}#")
@@ -51,6 +38,7 @@ class Bespoke():
             vs = list(sale.keys())
             vs.remove("total_amt")
             vs.remove("Location")
+            vs.remove("FixedExp")
             for iu in vs:
                 codes = []
                 price = []
@@ -69,10 +57,10 @@ class Bespoke():
                         ITEM_CODE, ITEM_NAME, _, ITEM_SALE_RATE = Bespoke.item(code=citcode)
 
                         if piprice != ITEM_SALE_RATE: # this will update user if the rate is different 
-                            ITEM_PURCHASE_RATE = int(piprice) * 0.7
+                            ITEM_PURCHASE_RATE = int(piprice) * 0.74
                             ITEM_SALE_RATE = piprice
                         
-                        ITEM_PURCHASE_RATE = round(ITEM_SALE_RATE * 0.7,2)
+                        ITEM_PURCHASE_RATE = round(ITEM_SALE_RATE * 0.74,2)
 
                         purchase_rate += ITEM_PURCHASE_RATE * nqty
                         PROFIT = (int(ITEM_SALE_RATE) - int(ITEM_PURCHASE_RATE)) * nqty
@@ -108,3 +96,7 @@ class Bespoke():
             ITEM_LIST.append(i[0])
 
         return ITEM_LIST
+
+print(Bespoke.sale("2023-08-12"))
+res = rq.post("https://krishangarments.pythonanywhere.com/sale-sync",json=Bespoke.sale("2023-08-12"))
+print(res.text)
