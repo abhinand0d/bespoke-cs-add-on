@@ -96,7 +96,3 @@ class Bespoke():
             ITEM_LIST.append(i[0])
 
         return ITEM_LIST
-
-print(Bespoke.sale("2023-08-12"))
-res = rq.post("https://krishangarments.pythonanywhere.com/sale-sync",json=Bespoke.sale("2023-08-12"))
-print(res.text)

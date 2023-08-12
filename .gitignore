@@ -1,4 +1,5 @@
 *.bat
 __pycache__/
 *.pyc
+test.py
 necessary_data.json
