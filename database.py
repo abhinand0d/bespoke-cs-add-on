@@ -3,6 +3,7 @@ import json
 import os
 import requests as rq
 
+PROFIT_PERCENTAGE = 0.33
 DBQ = 'D:\BESPOKE TSR\MData.mdb' #DB Location - Change it later
 conn = pyodbc.connect(r'Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ='+DBQ+';')
 
@@ -23,9 +24,9 @@ class Bespoke():
         sale = {"total_amt": 0,"Location":LOCATION,"FixedExp":TOTAL_FIXED_COST}
         total_amt = 0
         cur = conn.cursor()
-        cur.execute(f"SELECT nsaleno,nsaleamt,ntotdiscamt FROM salesmast WHERE dsaledate=#{date}#")
+        cur.execute(f"SELECT nsaleno,nsaleamt,ntotdiscamt,ccreatedtime,ceditedtime FROM salesmast WHERE dsaledate=#{date}# ORDER BY nsaleno ASC;")
         for i in cur.fetchall():
-            sale[i[0]] = {"sale_amount": i[1], "discount_amount": i[2],"purchase_rate":0,"profit":0,"item_list": []}
+            sale[i[0]] = {"sale_amount": i[1], "discount_amount": i[2],"createdtime":i[3],"editedtime":i[4],"purchase_rate":0,"profit":0,"item_list": []}
             try: 
                 total_amt += i[1]
             except:
@@ -57,10 +58,10 @@ class Bespoke():
                         ITEM_CODE, ITEM_NAME, _, ITEM_SALE_RATE = Bespoke.item(code=citcode)
 
                         if piprice != ITEM_SALE_RATE: # this will update user if the rate is different 
-                            ITEM_PURCHASE_RATE = int(piprice) * 0.74
+                            ITEM_PURCHASE_RATE = int(piprice) * (1-PROFIT_PERCENTAGE)
                             ITEM_SALE_RATE = piprice
                         
-                        ITEM_PURCHASE_RATE = round(ITEM_SALE_RATE * 0.74,2)
+                        ITEM_PURCHASE_RATE = round(ITEM_SALE_RATE * (1-PROFIT_PERCENTAGE),2)
 
                         purchase_rate += ITEM_PURCHASE_RATE * nqty
                         PROFIT = (int(ITEM_SALE_RATE) - int(ITEM_PURCHASE_RATE)) * nqty
@@ -96,3 +97,8 @@ class Bespoke():
             ITEM_LIST.append(i[0])
 
         return ITEM_LIST
+
+c = Bespoke.sale("2023-09-02")
+
+with open("data.json","w") as f:
+    json.dump(c,f)
